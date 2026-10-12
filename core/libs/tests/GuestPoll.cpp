@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <stdexcept>
 struct PollDescriptor {
     int descriptor;
     short events;
@@ -18,6 +19,7 @@ int APS5_VABI getsockname_nid_postfix(int, void*, std::uint32_t*);
 std::int64_t APS5_VABI send_nid_postfix(int, const void*, std::uint64_t, int);
 std::int64_t APS5_VABI recv_nid_postfix(int, void*, std::uint64_t, int);
 int APS5_VABI close_nid_postfix(int);
+int APS5_VABI open_nid_postfix(const char*, int, int);
 int APS5_VABI poll_nid_postfix(PollDescriptor*, std::uint32_t, int);
 int* APS5_VABI __error_nid_postfix();
 }
@@ -28,7 +30,7 @@ constexpr short Hup = 0x10;
 constexpr short Invalid = 0x20;
 int main() {
     const int listener = socket_nid_postfix(2, 1, 0);
-    Require(listener >= 0);
+    Require(listener >= 0 && listener < 1024);
     std::array<unsigned char, 16> address{16, 2, 0, 0, 127, 0, 0, 1};
     Require(bind_nid_postfix(listener, address.data(), address.size()) == 0);
     std::uint32_t size = address.size();
@@ -62,5 +64,16 @@ int main() {
     Require(poll_nid_postfix(nullptr, 1, 0) == -1 && *__error_nid_postfix() == 14);
     Require(poll_nid_postfix(&single, 1, -2) == -1 && *__error_nid_postfix() == 22);
     Require(close_nid_postfix(server) == 0);
+    const int file = open_nid_postfix("/dev/urandom", 0, 0);
+    Require(file >= 0);
+    PollDescriptor mixed[2]{{listener, In, 0}, {file, In, 0}};
+    bool unsupported = false;
+    try {
+        poll_nid_postfix(mixed, 2, 0);
+    } catch (const std::runtime_error&) {
+        unsupported = true;
+    }
+    Require(unsupported);
+    Require(close_nid_postfix(file) == 0);
     Require(close_nid_postfix(listener) == 0);
 }
