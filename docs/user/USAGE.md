@@ -108,6 +108,8 @@ Windows PowerShell:
 
 If the game is stored on a UNC share such as `\\wsl.localhost`, launch it through a temporary drive mapping. Direct UNC startup can fail when the runtime canonicalizes its working directory. In Command Prompt, run `pushd "\\server\share\game"`, then `app.exe`, and run `popd` after the game exits to release the mapping.
 
+If Windows reports an executable paging failure (`0xc0000006`) while running from a network share, `python tools/prepare_windows_network_images.py <runtime-directory>` adds [IMAGE_FILE_NET_RUN_FROM_SWAP](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_file_header) to the generated Windows executable, system libraries and guest modules. Windows then loads network images through local swap. Use `--dry-run` to inspect the files first. The original PS5 modules and game resources are not modified.
+
 ### Controller input for test runs
 
 Set `APS5_PAD_INPUT_FILE` to an absolute path before launching the application to enable controller pulses from a local command file. Once the application is reading controller input, send a button with the helper from the repository root:
