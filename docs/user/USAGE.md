@@ -106,6 +106,8 @@ Windows PowerShell:
 .\app.exe
 ```
 
+If the game is stored on a UNC share such as `\\wsl.localhost`, launch it through a temporary drive mapping. Direct UNC startup can fail when the runtime canonicalizes its working directory. In Command Prompt, run `pushd "\\server\share\game"`, then `app.exe`, and run `popd` after the game exits to release the mapping.
+
 ### Controller input for test runs
 
 Set `APS5_PAD_INPUT_FILE` to an absolute path before launching the application to enable controller pulses from a local command file. Once the application is reading controller input, send a button with the helper from the repository root:
@@ -132,6 +134,8 @@ Games ask for the console's language with `sceSystemServiceParamGetInt` and show
 ### GPU selection
 
 The game runs on a Vulkan 1.1 device with graphics and compute queues and swapchain presentation, preferring a discrete GPU over an integrated one. Devices without buffer device address, shaderInt64 or storageBuffer8BitAccess support and their required extensions are skipped, with the reason printed at start-up. Set `ANYPS5_GPU` to a part of a device name, compared without regard to case, to run on another device; the names are printed at start-up in the `Physical device candidate` lines. When no usable device contains the text, the start fails and the error lists the device names.
+
+If WSL only exposes incompatible D3D12/Dozen adapters, a compatible CPU Vulkan device may be selected. A native Windows build can use the GPU vendor's Windows Vulkan driver. Relink with `--windows` and use patched Windows system libraries and Windows guest modules.
 
 The window presents with vertical sync (`fifo`). Set `ANYPS5_PRESENT_MODE` to `fifo_latest_ready`, `mailbox` or `immediate` to keep the game from waiting for the display: `fifo_latest_ready` and `mailbox` still show whole frames at the display's refresh and drop the ones in between, `immediate` presents at once and can tear. The start fails on any other value and when the surface does not offer the mode (`fifo_latest_ready` needs `VK_KHR_present_mode_fifo_latest_ready` or its EXT form). Flips stay paced at 59.94 Hz in every mode. A Wayland compositor can stop delivering frames to a window it does not show, for example one on another workspace: on Hyprland with the NVIDIA driver a `fifo` swapchain then presents about once per second, while `fifo_latest_ready` and `immediate` keep the game at its normal rate.
 
